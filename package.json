@@ -1,0 +1,51 @@
+{
+  "name": "2k5-playbook-manager",
+  "productName": "2K5 Playbook Manager",
+  "version": "1.0.0",
+  "description": "Convert ESPN NFL 2K5 custom playbook saves from Xbox to PS2, edit their plays, and compare playbooks.",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node tests/run-tests.js && node tests/edit-tests.js && node tests/swap-tests.js",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^26.18.1"
+  },
+  "build": {
+    "appId": "com.seski.2k5playbookmanager",
+    "productName": "2K5 Playbook Manager",
+    "files": [
+      "index.html",
+      "js/**",
+      "electron/**",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable",
+        "zip"
+      ],
+      "icon": "electron/icon.png"
+    },
+    "nsis": {
+      "artifactName": "2K5-Playbook-Manager-Setup-${version}.exe",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "2K5 Playbook Manager",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "2K5-Playbook-Manager-${version}.exe"
+    },
+    "artifactName": "2K5-Playbook-Manager-${version}-win.${ext}"
+  }
+}

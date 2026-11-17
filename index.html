@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+
+<title>2K5 Playbook Manager</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --panel-2: #f0f2f5; --border: #d9dde3;
+    --text: #1b1f24; --muted: #5d6673; --accent: #1f6feb; --accent-text: #ffffff;
+    --ok: #1a7f37; --ok-bg: #dafbe1; --warn: #9a6700; --warn-bg: #fff8c5;
+    --bad: #cf222e; --bad-bg: #ffebe9; --diff: #ffd8b5; --mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1216; --panel: #171b21; --panel-2: #1e242c; --border: #2d353f;
+      --text: #e6e9ed; --muted: #97a1ad; --accent: #4493f8; --accent-text: #0b0e12;
+      --ok: #56d364; --ok-bg: #12301b; --warn: #e3b341; --warn-bg: #2e2610;
+      --bad: #ff7b72; --bad-bg: #3a1618; --diff: #6b3f12;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 24px 16px 8px; max-width: 1000px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 24px; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  main { max-width: 1000px; margin: 0 auto; padding: 8px 16px 48px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 10px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+  .tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .drop { border: 2px dashed var(--border); border-radius: 10px; padding: 24px 16px; text-align: center; color: var(--muted); transition: border-color .15s, background .15s; }
+  .drop.over { border-color: var(--accent); background: var(--panel-2); }
+  .drop strong { color: var(--text); display: block; margin-bottom: 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .spacer { flex: 1; }
+  button.btn, label.btn { display: inline-block; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 7px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.btn:disabled { opacity: .5; cursor: default; }
+  input[type=file] { display: none; }
+  input[type=text] { font: inherit; font-family: var(--mono); width: 90px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--text); }
+  #edit-code, input[data-code] { text-transform: uppercase; }
+  #form-name { width: 100%; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .seg label { padding: 6px 12px; cursor: pointer; font-size: 14px; }
+  .seg input { display: none; }
+  .seg label:has(input:checked) { background: var(--accent); color: var(--accent-text); }
+  .book { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; padding: 14px 0; border-top: 1px solid var(--border); }
+  .book:first-child { border-top: 0; }
+  .book h3 { margin: 0; font-size: 16px; }
+  .meta { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+  .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 10px; margin-left: 6px; vertical-align: 1px; }
+  .badge.ok { color: var(--ok); background: var(--ok-bg); }
+  .badge.warn { color: var(--warn); background: var(--warn-bg); }
+  .badge.bad { color: var(--bad); background: var(--bad-bg); }
+  .actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+  .note { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+  .empty { color: var(--muted); text-align: center; padding: 12px; }
+  .slots { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .slot h3 { margin: 0 0 8px; font-size: 15px; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 12px 0 0; font-size: 13px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+  .banner { padding: 12px 14px; border-radius: 8px; font-weight: 600; margin-bottom: 12px; }
+  .banner.ok { color: var(--ok); background: var(--ok-bg); }
+  .banner.warn { color: var(--warn); background: var(--warn-bg); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  td.num { font-variant-numeric: tabular-nums; }
+  details { border: 1px solid var(--border); border-radius: 8px; margin-top: 8px; }
+  summary { cursor: pointer; padding: 8px 12px; font-weight: 600; }
+  .records { padding: 0 12px 12px; overflow-x: auto; }
+  .rec { margin-top: 10px; }
+  .rec-title { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  pre.hex { margin: 0; font: 12px/1.5 var(--mono); white-space: pre; }
+  pre.hex b { background: var(--diff); font-weight: normal; }
+  pre.hex i { color: var(--muted); font-style: normal; }
+  .hidden { display: none !important; }
+
+  /* Play editor */
+  :root { --field: #2f6b3f; --field-line: rgba(255,255,255,.55); --route: #f2f2f2; --route-dim: rgba(255,255,255,.55);
+          --sel: #ffd54f; --player: #ffffff; --player-text: #10202a; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --field: #234d2f; --field-line: rgba(255,255,255,.4); }
+  }
+  main:has(#tab-edit:not(.hidden)) { max-width: 1400px; }
+  header:has(+ main #tab-edit:not(.hidden)) { max-width: 1400px; }
+  .editbar { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+  .editbar h2 { margin: 0; font-size: 20px; }
+  .editbar .note { flex-basis: 100%; margin: 0; }
+  .select, .search { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--text); }
+  .editor { display: grid; grid-template-columns: 280px minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+  .editor .panel { margin-bottom: 0; }
+  .browser { display: flex; flex-direction: column; gap: 10px; max-height: 78vh; }
+  .browser > :not(.play-list) { flex: none; }
+  .browser .seg label { padding: 5px 9px; font-size: 13px; }
+  .play-list { overflow-y: auto; margin: 0 -8px; }
+  .play-list h4 { margin: 10px 8px 4px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .play-list button { display: flex; width: 100%; gap: 8px; align-items: center; text-align: left; background: none; border: 0; color: var(--text); font: inherit; font-size: 14px; padding: 5px 8px; border-radius: 6px; cursor: pointer; }
+  .play-list button:hover { background: var(--panel-2); }
+  .play-list button[aria-current="true"] { background: var(--accent); color: var(--accent-text); }
+  .play-list .name { flex: 1; }
+  .kind { font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 8px; }
+  .kind.run { color: var(--warn); background: var(--warn-bg); }
+  .kind.pass { color: var(--ok); background: var(--ok-bg); }
+  .kind.front { color: var(--bad); background: var(--bad-bg); }
+  .kind.cover { color: var(--accent); background: var(--panel-2); }
+  .kind.both { color: var(--warn); background: var(--warn-bg); }
+  .seg.unit { display: flex; }
+  .seg.unit label { flex: 1; text-align: center; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sel); flex: none; }
+  .play-list h4 .dot { display: inline-block; margin-left: 4px; vertical-align: 1px; }
+  .form-edit-tag { margin-left: 6px; color: var(--sel); text-transform: none; letter-spacing: 0; font-weight: 600; }
+  .playhead { display: flex; justify-content: space-between; gap: 12px; align-items: start; margin-bottom: 10px; }
+  .playhead h3 { margin: 0; font-size: 17px; }
+  input.inline-check { display: inline; margin: 0 4px 0 0; vertical-align: -1px; accent-color: var(--accent); }
+  .field svg { display: block; width: 100%; height: auto; max-height: 64vh; border-radius: 8px; background: var(--field); touch-action: manipulation; }
+  .field .player { cursor: pointer; }
+  .field.form-mode .player { cursor: grab; touch-action: none; }
+  .field.form-mode .player.dragging { cursor: grabbing; }
+  .warn-list { margin: 6px 0 0; padding-left: 18px; color: var(--warn); }
+  .warn-list.bad-list { color: var(--bad); margin-bottom: 8px; }
+  .form-panel .fields { margin-top: 10px; }
+  .pkg-row { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); font-size: 14px; }
+  #swap-dialog { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  #swap-dialog::backdrop { background: rgba(0, 0, 0, .55); }
+  #swap-dialog h2 { margin: 0 0 6px; font-size: 20px; }
+  #swap-plan table { margin-top: 12px; }
+  #swap-plan details { margin-top: 10px; }
+  .pkg-row .actions { flex-wrap: nowrap; }
+  .pkg-row .actions .btn { padding: 4px 8px; font-size: 13px; white-space: nowrap; }
+  #form-toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  #play-check { margin-top: 8px; }
+  .steps { max-height: 78vh; overflow-y: auto; }
+  .steps h3 { margin: 0 0 2px; font-size: 16px; }
+  .step { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-top: 8px; cursor: pointer; }
+  .step[aria-current="true"] { border-color: var(--sel); box-shadow: 0 0 0 1px var(--sel); }
+  .step-title { font-size: 14px; }
+  .step-title b { color: var(--muted); font-weight: 600; margin-right: 6px; }
+  .fields { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; align-items: center; margin-top: 8px; font-size: 13px; }
+  .fields label { color: var(--muted); }
+  .fields input, .fields select { font: inherit; font-size: 13px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--text); width: 100%; min-width: 0; }
+  .field-error { color: var(--bad); font-size: 13px; margin-top: 6px; }
+  .fields.job { margin: 10px 0 0; font-size: 14px; }
+  .fields.job label { color: var(--text); font-weight: 600; }
+  .job-help { margin: 6px 0 0; }
+  .shared-note.warn-note { color: var(--warn); background: var(--warn-bg); margin-bottom: 4px; }
+  .shared-note { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--panel-2); font-size: 13px; color: var(--muted); }
+  @media (max-width: 1100px) {
+    .editor { grid-template-columns: 240px minmax(0, 1fr); }
+    .steps { grid-column: 1 / -1; max-height: none; }
+  }
+  @media (max-width: 680px) {
+    .editor { grid-template-columns: 1fr; }
+    .browser { max-height: 50vh; }
+  }
+  @media (max-width: 680px) {
+    .slots { grid-template-columns: 1fr; }
+    .book { grid-template-columns: 1fr; }
+    .actions { justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>2K5 Playbook Manager</h1>
+  <p>Convert ESPN NFL 2K5 custom playbook saves from Xbox to PS2, edit their run and pass plays, and compare playbooks.</p>
+</header>
+<main>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="edit" aria-selected="true">Edit playbook</button>
+    <button role="tab" aria-selected="false" data-tab="convert">Convert Xbox → PS2</button>
+    <button role="tab" aria-selected="false" data-tab="compare">Compare playbooks</button>
+  </nav>
+
+  <section id="tab-convert" class="hidden">
+    <div class="panel">
+      <div class="drop" id="xbox-drop">
+        <strong>Drop Xbox playbook save folders here</strong>
+        Each folder holds SAVEGAME.DAT and SaveMeta.xbx. You can drop the parent folder to load several at once.
+        <div class="row" style="justify-content:center; margin-top:12px">
+          <label class="btn">Choose folder…<input type="file" id="xbox-folder" webkitdirectory multiple></label>
+          <label class="btn">Choose files…<input type="file" id="xbox-files" multiple></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <span>PS2 save format</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="format" value="max" checked>AR MAX (.max)</label>
+          <label><input type="radio" name="format" value="psu">uLaunchELF (.psu)</label>
+        </div>
+        <span class="spacer"></span>
+        <button class="btn" id="clear-books" disabled>Clear</button>
+        <button class="btn primary" id="download-all" disabled>Download all</button>
+      </div>
+      <div id="books" style="margin-top:12px"><div class="empty">No Xbox playbooks loaded yet.</div></div>
+      <p id="status" class="note" role="status" hidden></p>
+      <p class="note">The playbook data is copied unchanged. Only four console-specific header values are replaced, then the PS2 checksums are recalculated. Not yet verified in-game; keep backups of your memory card.</p>
+    </div>
+  </section>
+
+  <section id="tab-edit">
+    <div class="panel" id="edit-empty">
+      <div class="drop" id="edit-drop">
+        <strong>Open a playbook to view and edit its plays</strong>
+        Drop an Xbox save folder, SAVEGAME.DAT, or a PS2 .max / .psu, or click <em>Edit playbook</em> on a book in the Convert tab.
+        <div class="row" style="justify-content:center; margin-top:12px">
+          <label class="btn">Choose file…<input type="file" id="edit-file"></label>
+        </div>
+      </div>
+    </div>
+    <div id="edit-book" class="hidden">
+      <div class="panel editbar">
+        <div>
+          <h2 id="edit-title"></h2>
+          <div class="meta" id="edit-meta"></div>
+        </div>
+        <div class="actions">
+          <label class="meta">Team code <input type="text" id="edit-code" maxlength="16" spellcheck="false"></label>
+          <select id="edit-format" class="select" aria-label="PS2 format">
+            <option value="max">PS2 .max</option>
+            <option value="psu">PS2 .psu</option>
+          </select>
+          <button class="btn primary" id="edit-save-ps2">Save for PS2…</button>
+          <button class="btn" id="edit-save-xbox">Save for Xbox…</button>
+          <button class="btn hidden" id="swap-undo">Undo defense swap</button>
+          <button class="btn" id="edit-close" aria-label="Close playbook">Close</button>
+        </div>
+        <p class="note" id="edit-status" role="status" hidden></p>
+      </div>
+      <div class="editor">
+        <aside class="panel browser">
+          <div class="seg unit" role="radiogroup" aria-label="Offense or defense">
+            <label><input type="radio" name="unit" value="offense" checked>Offense</label>
+            <label><input type="radio" name="unit" value="defense">Defense</label>
+          </div>
+          <div class="row">
+            <div class="seg" role="radiogroup" aria-label="Play type">
+              <label><input type="radio" name="kind" value="all" checked>All</label>
+              <label><input type="radio" name="kind" value="k1"><span id="kind-k1">Run</span></label>
+              <label><input type="radio" name="kind" value="k2"><span id="kind-k2">Pass</span></label>
+              <label><input type="radio" name="kind" value="edited">Edited</label>
+            </div>
+          </div>
+          <button class="btn hidden" id="swap-open" title="Replace this book's whole defense with another team's (e.g. 4-3 to 3-4)">Swap defense…</button>
+          <input type="search" id="play-search" class="search" placeholder="Search plays or formations" aria-label="Search plays">
+          <div id="play-list" class="play-list"></div>
+        </aside>
+        <div class="panel fieldpanel">
+          <div class="playhead">
+            <div>
+              <h3 id="play-title"></h3>
+              <div class="meta" id="play-meta"></div>
+            </div>
+            <div class="actions">
+              <button class="btn" id="form-toggle" title="Move players in this formation or rename it, without changing any play">Edit formation</button>
+              <label class="btn" id="flip-label" title="Mirror the diagram left-to-right, like flipping the play on the play-call screen"><input type="checkbox" id="play-flip" class="inline-check"> Flip</label>
+              <button class="btn" id="play-reset">Reset play</button>
+            </div>
+          </div>
+          <div id="field" class="field"></div>
+          <div id="play-check" class="meta"></div>
+        </div>
+        <aside class="panel steps">
+          <h3 id="slot-title">Select a player</h3>
+          <div class="meta" id="slot-meta">Click a player on the field to see and edit their assignment.</div>
+          <div id="step-list"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <dialog id="swap-dialog" aria-labelledby="swap-title">
+    <h2 id="swap-title">Swap defense</h2>
+    <p class="meta">Replace this book's whole defense with another team's: its formations, personnel, calls and default audibles, copied exactly the way the game's own playbook editor copies a formation. The offense and special teams are not changed. For a 4-3 to 3-4 switch, pick a 3-4 team's book (e.g. PIT, BAL, SD).</p>
+    <div class="drop" id="swap-drop"><strong>Drop the donor team's book</strong>Xbox SAVEGAME.DAT, or a PS2 .max / .psu
+      <div style="margin-top:10px"><label class="btn">Choose file…<input type="file" id="swap-file"></label></div>
+    </div>
+    <div id="swap-plan"></div>
+    <div class="row" style="justify-content:flex-end; margin-top:14px">
+      <button class="btn" id="swap-cancel">Cancel</button>
+      <button class="btn primary" id="swap-apply" disabled>Swap defense</button>
+    </div>
+  </dialog>
+
+  <section id="tab-compare" class="hidden">
+    <div class="slots">
+      <div class="panel slot" data-slot="0">
+        <h3>Playbook A</h3>
+        <div class="drop"><strong>Drop a file</strong>.max, .psu, SAVEGAME.DAT or raw playbook
+          <div style="margin-top:10px"><label class="btn">Choose file…<input type="file"></label></div>
+        </div>
+        <div class="info"></div>
+      </div>
+      <div class="panel slot" data-slot="1">
+        <h3>Playbook B</h3>
+        <div class="drop"><strong>Drop a file</strong>.max, .psu, SAVEGAME.DAT or raw playbook
+          <div style="margin-top:10px"><label class="btn">Choose file…<input type="file"></label></div>
+        </div>
+        <div class="info"></div>
+      </div>
+    </div>
+    <div class="panel hidden" id="compare-result"></div>
+  </section>
+</main>
+
+<script src="js/lzari.js"></script>
+<script src="js/playbook.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/saves.js"></script>
+<script src="js/playcodec.js"></script>
+<script src="js/bookedit.js"></script>
+<script src="js/defenseswap.js"></script>
+<script src="js/app.js"></script>
+<script src="js/editor-ui.js"></script>
+</body>
+</html>
