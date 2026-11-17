@@ -1,8 +1,24 @@
 # 2K5 Playbook Manager
 
-Converts ESPN NFL 2K5 custom playbook saves from Xbox to PS2, and compares playbooks byte-by-byte.
+A tool for ESPN NFL 2K5 playbooks. Its main feature is **modifying plays and formations**; it also
+converts custom playbook saves from Xbox to PS2 and compares playbooks byte-by-byte.
 It runs either as a Windows desktop app (Electron) or as a plain web page: open `index.html` in a browser.
 Both use the same code.
+
+## Features
+- **Modify plays** (see [Edit playbook](#edit-playbook)): pick any run, pass or defensive play, click a
+  player on the field, and change their routes, blocks, handoffs, rush lanes, zone/man coverage and
+  timing. You can also change a defender's job to another job he has in the same formation.
+- **Modify formations** (see [Edit formations](#edit-formations)): drag players to new spots, rename the
+  formation, and choose which personnel packages it can run. Every play in the formation picks up the
+  new alignment, and the tool checks that the result is a legal football formation.
+- **Swap the whole defense** (see [Swap the whole defense](#swap-the-whole-defense-eg-4-3-to-3-4)):
+  replace a book's defense with another team's, such as 4-3 to 3-4.
+- **Convert** Xbox saves to PS2 `.max` or `.psu`, and **save edited books** for either console.
+- **Compare** two playbooks byte-by-byte.
+
+Edits only reuse existing plays, formations and steps, and each one must pass the game's own play
+check, so an edited book stays valid for the game.
 
 ## Desktop app
 ```
